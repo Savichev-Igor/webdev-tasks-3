@@ -1,11 +1,10 @@
 'use strict';
 
-// Для генерации ошибок
-const forEachBreakException = new Error('forEach was broken');
-
 /**
  * @author Savi
- *
+ */
+
+/**
  * Метод serial запускает функции [func1, func2] в массиве последовательно.
  * Результат функции передается в следующую. Помимо результата предыдущей функции,
  * она получает колбэк. Колбэк принимает первым параметром ошибку,
@@ -34,8 +33,6 @@ module.exports.serial = function (functions, cb) {
 };
 
 /**
- * @author Savi
- *
  * Метод parallel запускает функции [func1, func2] в массиве параллельно.
  * Результат собирается в массив, который передается в основной callback при завершении
  * всех функций.
@@ -47,28 +44,29 @@ module.exports.serial = function (functions, cb) {
  */
 module.exports.parallel = function (functions, cb) {
     var results = [];
+    var stopIteration = false;
 
     // forEach - асинхронный :3
     functions.forEach(function (func, ind) {
-        func(function (err, data) {
-            if (err) {
-                cb(err, data);
-                // Если хотя бы одна ошибка, то прерываем работу
-                throw forEachBreakException;
-            } else {
-                results.push(data);
-            }
-            if (ind === functions.length - 1) {
-                // По завершениею вызываем основной cb
-                cb(null, results);
-            }
-        });
+        if (!stopIteration) {
+            func(function (err, data) {
+                if (err) {
+                    cb(err, data);
+                    // Если хотя бы одна ошибка, то прерываем работу
+                    stopIteration = true;
+                } else {
+                    results.push(data);
+                }
+                if (ind === functions.length - 1) {
+                    // По завершениею вызываем основной cb
+                    cb(null, results);
+                }
+            });
+        }
     });
 };
 
 /**
- * @author Savi
- *
  * Метод map запускает функцию func с каждым значением ['value1', 'value2'] параллельно.
  * Результат собираются в массив, который передаётся в основной cb при завершении всех запусков.
  *
@@ -78,20 +76,23 @@ module.exports.parallel = function (functions, cb) {
  */
 module.exports.map = function (values, func, cb) {
     var results = [];
+    var stopIteration = false;
 
     // forEach - асинхронный :3
     values.forEach(function (value, ind) {
-        func(value, function (err, data) {
-            if (err) {
-                cb(err, data);
-                // Если хотя бы одна ошибка, то прерываем работу
-                throw forEachBreakException;
-            } else {
-                results.push(data);
-            }
-            if (ind === values.length - 1) {
-                cb(null, results);
-            }
-        });
+        if (!stopIteration) {
+            func(value, function (err, data) {
+                if (err) {
+                    cb(err, data);
+                    // Если хотя бы одна ошибка, то прерываем работу
+                    stopIteration = true;
+                } else {
+                    results.push(data);
+                }
+                if (ind === values.length - 1) {
+                    cb(null, results);
+                }
+            });
+        }
     });
 };
