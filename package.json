@@ -1,5 +1,9 @@
 {
   "private": true,
+  "contributors": [{
+    "name": "Savi",
+    "email": "savichev95@gmail.com"
+  }],
   "dependencies": {
     "jscs": "^2.2.1"
   },

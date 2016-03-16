@@ -1,6 +1,5 @@
 'use strict';
 
-const mocha = require('mocha');
 const chai = require('chai');
 const sinon = require('sinon');
 
@@ -13,8 +12,8 @@ const flow = require('../flow.js');
 
 describe('Tests for flow.js', () => {
     describe('Test for serial', () => {
-        it('Should call func once & cb once with arguments null, 1', () => {
-            var func = sinon.spy((cb) => {
+        it('Should call func once & cb once with args null, 1', () => {
+            var func = sinon.spy(cb => {
                 cb(null, 1);
             });
 
@@ -27,7 +26,7 @@ describe('Tests for flow.js', () => {
             cb.should.have.been.calledWith(null, 1);
         });
 
-        it('Should call 2 funcs & pass union data in cb which call once', () => {
+        it('Should call 2 funcs & pass union data in cb which call once with args. null, 2', () => {
             var funcOne = sinon.spy(cb => {
                 cb(null, 1);
             });
@@ -71,30 +70,42 @@ describe('Tests for flow.js', () => {
     });
 
     describe('Test for parallel', () => {
-        it('Should call func once & cb once with arguments null, [results]', () => {
-            var func = sinon.spy((cb) => {
-                cb(null, 1);
+        it('Should call func once & cb once with args null, [1]', done => {
+            var func = sinon.spy(cb => {
+                setTimeout(() => {
+                    cb(null, 1);
+                }, 500);
             });
 
-            var cb = sinon.spy();
+            var cb = sinon.spy(() => {
+                cb.should.have.been.calledOnce;
+                cb.should.have.been.calledWith(null, [1]);
+                done();
+            });
 
             flow.parallel([func], cb);
 
             func.should.have.been.calledOnce;
-            cb.should.have.been.calledOnce;
-            cb.should.have.been.calledWith(null, [1]);
         });
 
-        it('Should run 2 funcs asyn once & pass data cb with [results] array once', done => {
+        it('Should run 2 funcs asyn once & pass data in cb with args null, [1, 2] once', done => {
             var funcOne = sinon.spy(cb => {
-                cb(null, 1);
+                setTimeout(() => {
+                    cb(null, 1);
+                }, 500);
             });
 
             var funcTwo = sinon.spy(cb => {
-                cb(null, 2);
+                setTimeout(() => {
+                    cb(null, 2);
+                }, 500);
             });
 
-            var cb = sinon.spy();
+            var cb = sinon.spy(() => {
+                cb.should.have.been.calledOnce;
+                cb.should.have.been.calledWith(null, [1, 2]);
+                done();
+            });
 
             flow.parallel([funcOne, funcTwo], cb);
 
@@ -104,12 +115,9 @@ describe('Tests for flow.js', () => {
                сделать =( */
             funcOne.should.have.been.calledOnce;
             funcTwo.should.have.been.calledOnce;
-            cb.should.have.been.calledOnce;
-            cb.should.have.been.calledWith(null, [1, 2]);
-            done();
         });
 
-        it('Should run 2 funcs async, get err in 1st func & call once cb with err & data', done => {
+        it('Should run 2 funcs async, get err in 1st func & call once cb with err, 1', done => {
             var testErr = new Error('Something is going bad');
 
             var funcOne = sinon.spy(cb => {
@@ -117,18 +125,77 @@ describe('Tests for flow.js', () => {
             });
 
             var funcTwo = sinon.spy(cb => {
-                cb(null, 2);
+                setTimeout(() => {
+                    cb(null, 2);
+                }, 500);
             });
 
-            var cb = sinon.spy();
+            var cb = sinon.spy(() => {
+                cb.should.have.been.calledOnce;
+                cb.should.have.been.calledWith(testErr, 1);
+                done();
+            });
 
             flow.parallel([funcOne, funcTwo], cb);
 
             funcOne.should.have.been.calledOnce;
             funcTwo.should.not.have.been.calledOnce;
-            cb.should.have.been.calledOnce;
-            cb.should.have.been.calledWith(testErr, 1);
-            done();
+        });
+    });
+
+    describe('Test for map', () => {
+        it('Should call func once & call cb once with args null, [1]', done => {
+            var func = sinon.spy((data, cb) => {
+                setTimeout(() => {
+                    cb(null, data);
+                }, 500);
+            });
+
+            var cb = sinon.spy(() => {
+                cb.should.have.been.calledOnce;
+                cb.should.have.been.calledWith(null, [1]);
+                done();
+            });
+
+            flow.map([1], func, cb);
+
+            func.should.have.been.calledOnce;
+        });
+
+        it('Should call func once & get err in 1st val & call once cb with args err, 1', done => {
+            var testErr = new Error('Something is going bad');
+
+            var func = sinon.spy((data, cb) => {
+                cb(testErr, data);
+            });
+
+            var cb = sinon.spy(() => {
+                cb.should.have.been.calledOnce;
+                cb.should.have.been.calledWith(testErr, 1);
+                done();
+            });
+
+            flow.map([1, 2], func, cb);
+
+            func.should.have.been.calledOnce;
+        });
+
+        it('Should call func thrice & call cb once with arguments null, [1, 2, 3]', done => {
+            var func = sinon.spy((data, cb) => {
+                setTimeout(() => {
+                    cb(null, data);
+                }, 500);
+            });
+
+            var cb = sinon.spy(() => {
+                cb.should.have.been.calledOnce;
+                cb.should.have.been.calledWith(null, [1, 2, 3]);
+                done();
+            });
+
+            flow.map([1, 2, 3], func, cb);
+
+            func.should.have.been.calledThrice;
         });
     });
 });
